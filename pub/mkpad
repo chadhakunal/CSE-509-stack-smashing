@@ -1,0 +1,9 @@
+#!/bin/bash
+rm -f padding.h
+RANDOM=$1
+n=$(($RANDOM % 891))
+echo "int j;" >> padding.h
+for (( c=1; c <= $n; c++ )); do
+    # Declare i and j variables in the generated C code to avoid undeclared errors
+    echo "for (i=0; i < 5; i++) { for (j=0; j < 5; j++) z += i*z; }" >> padding.h
+done
