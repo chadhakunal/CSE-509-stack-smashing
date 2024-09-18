@@ -64,6 +64,25 @@ int main() {
     get_formatted("%*s");
 
 
+    /*
+     Disassembly of section .text:
+
+0000000000401000 <_start>:
+  401000:	90                   	nop
+  401001:	90                   	nop
+  401002:	90                   	nop
+  401003:	90                   	nop
+  401004:	90                   	nop
+  401005:	bf 70 56 34 12       	mov    $0x12345670,%edi
+  40100a:	48 be f0 de bc 9a 78 	movabs $0x123456789abcdef0,%rsi
+  401011:	56 34 12 
+  401014:	48 ba 00 e0 ff ff ff 	movabs $0x7fffffffe000,%rdx
+  40101b:	7f 00 00 
+  40101e:	b8 ef be ad de       	mov    $0xdeadbeef,%eax
+  401023:	ff e0                	jmpq   *%rax
+
+
+      */
 
 }
 
