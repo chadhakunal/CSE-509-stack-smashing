@@ -1,7 +1,7 @@
 CC=gcc
 CFLAGS=-g -Wall -z execstack -DGRP=$(GRP_ID) -DLEN1=1124 -DLEN2=128 -DLEN3=512 -DRANDOM=0
 
-all: vuln vuln.dis driver_auth_db 
+all: vuln vuln.dis driver_auth_db driver_return_to_helper
 
 vuln: vuln.o my_malloc.o
 	$(CC) $(CFLAGS) -o vuln vuln.o my_malloc.o
