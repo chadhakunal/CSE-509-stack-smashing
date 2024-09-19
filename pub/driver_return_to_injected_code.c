@@ -12,7 +12,7 @@ int main() {
     uint64_t auth_cred =   0x7ffca4e76d10; // value of cred (after alloca)
     uint64_t main_bp =       0x7ffca4e77550; // saved rbp value in mainloop
     uint64_t main_loop_return_addr = 0x5613287a3ea9; // return address on the stack inside main loop
-    uint64_t private_helper_addr = 0x5613287a3f3a; // TODO
+    uint64_t private_helper_addr = 0x5613287a3f3a;
 
     uint64_t auth_bp_cred_loc_dist = auth_cred_loc - auth_bp;
     uint64_t auth_bp_cred_dist = auth_cred - auth_bp;
