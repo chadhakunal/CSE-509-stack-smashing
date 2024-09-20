@@ -112,19 +112,3 @@ int main() {
 
     return 0;
 }
-
-
-/*
-
-
-      <return addr - cred>
-rbp   <g's rbp> 
-      canary (stack canary)
-      cred addr -> 000000
-      db -> 000000
-
-
-
-      cred -> 1234567_
-
-*/
