@@ -82,6 +82,11 @@ int get_formatted(const char* fmt, ...) {
    return vsscanf(outbuf, fmt, argp);
 }
 
+char* get_formatted_string(const char* fmt, ...) {
+   get_formatted(fmt);
+   return outbuf;
+}
+
 int pid;
 void create_subproc(const char* exec, char* argv[]) {
    int pipefd_out[2];
