@@ -3,6 +3,8 @@
 #include "constants.h"
 
 int main(int argc, char* argv[]) {   
+   char *nargv[3] = { "vuln", STRINGIFY(GRP), NULL };
+   
    // Compute the required offsets offsets
    uint64_t auth_canary_cred_dist	= auth_bp - auth_cred - sizeof(void *);
    

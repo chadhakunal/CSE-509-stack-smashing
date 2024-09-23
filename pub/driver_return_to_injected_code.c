@@ -3,6 +3,8 @@
 #include "constants.h"
 
 int main() {
+    char *nargv[3] = { "vuln", STRINGIFY(GRP), NULL };
+    
     // Fork subprocess vuln
     create_subproc("./vuln", nargv);
     fprintf(stderr, "driver: created vuln subprocess. If you want to use gdb on\n"
