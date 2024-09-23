@@ -1,8 +1,6 @@
 #define STRINGIFY2(X) #X
 #define STRINGIFY(X) STRINGIFY2(X)
 
-// const char *nargv[3] = { "vuln", STRINGIFY(GRP), NULL };
-
 const uint64_t auth_bp                  =   0x7ffca4e76e10; // rbp value in auth
 const uint64_t auth_cred_loc            =   0x7ffca4e76e00; // loc of cred 
 const uint64_t auth_db_loc              =   0x7ffca4e76df8; // loc of db (local var of auth)

