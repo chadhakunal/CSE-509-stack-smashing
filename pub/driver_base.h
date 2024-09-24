@@ -6,15 +6,13 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <sys/types.h>
-#include <sys/wait.h>
 #include <signal.h>
 #include <stdint.h>
 #include <errno.h>
 
 /******************************************************************************
-   Unless you are interested in the details of how this program communicates
-   with a subprocess, you can skip all of the code below and skip directly to
-   the main function below. 
+   Header file with all the functions which are used to communicate 
+   with a subprocess
 *******************************************************************************/
 
 #define err_abort(x) do { \
@@ -82,6 +80,11 @@ int get_formatted(const char* fmt, ...) {
    return vsscanf(outbuf, fmt, argp);
 }
 
+char* get_formatted_string(const char* fmt, ...) {
+   get_formatted(fmt);
+   return outbuf;
+}
+
 int pid;
 void create_subproc(const char* exec, char* argv[]) {
    int pipefd_out[2];
@@ -103,7 +106,30 @@ void create_subproc(const char* exec, char* argv[]) {
    }
 }
 
-/* Shows an example session with subprocess. Change it as you see fit, */
 
-#define STRINGIFY2(X) #X
-#define STRINGIFY(X) STRINGIFY2(X)
+void probe_stack(int low, int high) {
+   char s[64];
+   for (int j= low; j < high; j++) {
+      sprintf(s, "e %%%d$p\n", j);
+      put_str(s);
+      send();
+      uint64_t extr;
+      get_formatted("%p", &extr);
+      fprintf(stderr, "Extr %lx\n", extr);
+   }
+}
+
+void display_vuln_status(int status) {
+   if (WIFEXITED(status)) {
+      fprintf(stderr, "vuln exited, status=%d\n", WEXITSTATUS(status));
+   } 
+   else if (WIFSIGNALED(status)) {
+      printf("vuln killed by signal %d\n", WTERMSIG(status));
+   } 
+   else if (WIFSTOPPED(status)) {
+      printf("vuln stopped by signal %d\n", WSTOPSIG(status));
+   } 
+   else if (WIFCONTINUED(status)) {
+      printf("vuln continued\n");
+   }
+}

