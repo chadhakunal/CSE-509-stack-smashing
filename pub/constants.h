@@ -22,6 +22,5 @@ const uint64_t g_main_bp_dist		    = g_bp - main_bp;
 const uint64_t g_bp_cred_dist		    = g_bp - auth_cred;
 const uint64_t private_helper_distance  = private_helper_addr - main_loop_return_addr;
 const uint64_t private_helper_distance2 = private_helper_addr2 - main_loop_return_addr;
-const uint64_t 
- = private_helper2_addr - main_loop_return_addr;
+const uint64_t private_helper2_distance = private_helper2_addr - main_loop_return_addr;
 const uint64_t main_loop_return_addr_dist = main_loop_return_addr_loc - main_bp;
