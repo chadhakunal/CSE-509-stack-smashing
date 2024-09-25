@@ -10,7 +10,7 @@ const uint64_t main_bp                  =   0x7ffca4e77550; // saved rbp value i
 const uint64_t main_loop_return_addr_loc = 0x7ffca4e77518;
 const uint64_t main_loop_return_addr    =   0x5613287a3ea9; // return address on the stack inside main loop
 const uint64_t private_helper_addr      =   0x5613287a3f3a; // address of the private_helper
-const uint64_t private_helper_addr2     =   0x5613287a3f51; // address of the private_helper instruction to return to
+const uint64_t private_helper_addr2     =   0x5613287a3fa6; // address of the private_helper instruction to return to
 
 
 const uint64_t auth_bp_cred_loc_dist    = auth_cred_loc - auth_bp;

